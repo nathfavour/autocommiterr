@@ -1,23 +1,24 @@
-import { spawnSync } from 'bun';
+import { spawnSync } from 'child_process';
 
 type FileChange = { file: string; change: string };
 
 /**
- * Run git command using Bun
+ * Run git command using Node.js
  */
 function runGit(cwd: string, cmd: string): string {
   try {
-    const proc = Bun.spawnSync({
-      cmd: cmd.split(' '),
+    const [command, ...args] = cmd.split(' ');
+    const proc = spawnSync(command, args, {
       cwd,
+      encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
-    if (!proc.success) {
+    if (proc.error || proc.status !== 0) {
       return '';
     }
 
-    return (proc.stdout?.toString() || '').trim();
+    return (proc.stdout || '').trim();
   } catch {
     return '';
   }

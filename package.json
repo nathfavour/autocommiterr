@@ -6,15 +6,16 @@
     "autocommiterr": "dist/index.js"
   },
   "scripts": {
-    "dev": "bun run index.ts",
+    "dev": "node --loader ts-node/esm index.ts",
     "build": "tsc --outDir ./dist --target ES2020 --module ES2020 --esModuleInterop --skipLibCheck --resolveJsonModule",
-    "start": "bun ./index.ts"
+    "start": "node ./dist/index.js"
   },
   "dependencies": {
     "commander": "^12.0.0"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/node": "^22",
+    "typescript": "^5"
   },
   "license": "MIT"
 }
