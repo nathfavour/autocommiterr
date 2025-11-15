@@ -1,24 +1,29 @@
-import { spawnSync, write } from 'bun';
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawnSync } from 'child_process';
 
 /**
- * Run git command using Bun
+ * Run git command using Node.js
  */
 export function runGitCommand(cmd: string, cwd: string): string {
   try {
-    const proc = Bun.spawnSync({
-      cmd: cmd.split(' '),
+    const [command, ...args] = cmd.split(' ');
+    const proc = spawnSync(command, args, {
       cwd,
+      encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
-    if (!proc.success) {
-      const stderr = proc.stderr?.toString() || '';
+    if (proc.error) {
+      throw proc.error;
+    }
+
+    if (proc.status !== 0) {
+      const stderr = proc.stderr || '';
       throw new Error(stderr || `Git command failed: ${cmd}`);
     }
 
-    return (proc.stdout?.toString() || '').trim();
+    return (proc.stdout || '').trim();
   } catch (e) {
     throw e instanceof Error ? e : new Error(String(e));
   }
@@ -43,7 +48,7 @@ export function getStagedFiles(cwd: string): string {
  */
 export async function commit(cwd: string, message: string): Promise<void> {
   const tmpFile = path.join('/tmp', `autocommiter_msg_${Date.now()}.txt`);
-  await write(tmpFile, message);
+  fs.writeFileSync(tmpFile, message, 'utf-8');
   
   try {
     runGitCommand(`git commit -F "${tmpFile.replace(/"/g, '\\"')}"`, cwd);
