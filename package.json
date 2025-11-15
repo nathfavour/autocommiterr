@@ -2,10 +2,18 @@
   "name": "autocommiterr",
   "module": "index.ts",
   "type": "module",
+  "bin": {
+    "autocommiterr": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "bun run index.ts",
+    "build": "bun build ./index.ts --outdir ./dist --target=bun --minify",
+    "start": "bun ./index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
   "devDependencies": {
     "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
   }
 }
