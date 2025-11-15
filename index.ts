@@ -292,14 +292,47 @@ program
   });
 
 // Parse and handle
+let commandWasRun = false;
+
+// Wrap the original parse to detect if a command ran
+const originalParse = program.parse.bind(program);
+program.parse = function(argv: string[]) {
+  const args = argv.slice(2);
+  
+  // Check if it's a recognized command
+  const recognizedCommands = ['commit', 'config:apikey', 'config:model', 'config:refresh-models', 'config:gitmoji', 'config:quiet', 'config:show'];
+  const isCommand = args.length > 0 && recognizedCommands.includes(args[0]);
+  
+  if (isCommand) {
+    commandWasRun = true;
+    return originalParse(argv);
+  }
+  
+  // Not a recognized command - run default commit instead
+  if (!args.length || args.every(arg => arg.startsWith('-'))) {
+    const options: any = {};
+    if (args.includes('--push')) options.push = true;
+    if (args.includes('--quiet')) options.quiet = true;
+    if (args.includes('--no-gitmoji')) options.gitmoji = false;
+    
+    // Extract message if provided
+    for (let i = 0; i < args.length; i++) {
+      if ((args[i] === '-m' || args[i] === '--message') && i + 1 < args.length) {
+        options.message = args[i + 1];
+      }
+    }
+    
+    performCommit(options);
+    return program;
+  }
+  
+  // Otherwise parse normally
+  return originalParse(argv);
+};
+
 try {
   program.parse(process.argv);
 } catch (err: any) {
   console.error('❌ Error:', err?.message || String(err));
   process.exit(1);
-}
-
-// Show help if no arguments
-if (!process.argv.slice(2).length) {
-  program.outputHelp();
 }

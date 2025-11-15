@@ -47,9 +47,21 @@ export function getStagedFiles(cwd: string): string {
  * Commit with a message
  */
 export async function commit(cwd: string, message: string): Promise<void> {
-  // Escape message for shell
-  const escaped = message.replace(/'/g, "'\\''");
-  runGitCommand(`git commit -m '${escaped}'`, cwd);
+  // Use spawnSync directly with proper arguments
+  const proc = spawnSync('git', ['commit', '-m', message], {
+    cwd,
+    encoding: 'utf-8',
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  
+  if (proc.error) {
+    throw proc.error;
+  }
+  
+  if (proc.status !== 0) {
+    const stderr = proc.stderr || '';
+    throw new Error(stderr || 'Git commit failed');
+  }
 }
 
 /**
