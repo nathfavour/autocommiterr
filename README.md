@@ -1,6 +1,6 @@
 # autocommiterr
 
-Bun CLI version of Autocommiter - Auto-commit messages using AI.
+Bun CLI version of Autocommiter - Auto-commit messages using AI...
 
 ## Setup
 

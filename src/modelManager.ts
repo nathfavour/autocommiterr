@@ -193,6 +193,23 @@ export async function setGitmojiEnabled(enabled: boolean): Promise<void> {
     writeConfig(config);
 }
 
+/**
+ * Get quiet mode setting
+ */
+export async function getQuietMode(): Promise<boolean> {
+    const config = readConfig();
+    return config.quietMode === true;
+}
+
+/**
+ * Set quiet mode setting
+ */
+export async function setQuietMode(enabled: boolean): Promise<void> {
+    const config = readConfig();
+    config.quietMode = enabled;
+    writeConfig(config);
+}
+
 export default {
     fetchAvailableModels,
     getCachedModels,
@@ -203,4 +220,6 @@ export default {
     setApiKey,
     getGitmojiEnabled,
     setGitmojiEnabled,
+    getQuietMode,
+    setQuietMode,
 };

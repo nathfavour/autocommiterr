@@ -47,18 +47,9 @@ export function getStagedFiles(cwd: string): string {
  * Commit with a message
  */
 export async function commit(cwd: string, message: string): Promise<void> {
-  const tmpFile = path.join('/tmp', `autocommiter_msg_${Date.now()}.txt`);
-  fs.writeFileSync(tmpFile, message, 'utf-8');
-  
-  try {
-    runGitCommand(`git commit -F "${tmpFile.replace(/"/g, '\\"')}"`, cwd);
-  } finally {
-    try {
-      fs.unlinkSync(tmpFile);
-    } catch (e) {
-      // ignore
-    }
-  }
+  // Escape message for shell
+  const escaped = message.replace(/'/g, "'\\''");
+  runGitCommand(`git commit -m '${escaped}'`, cwd);
 }
 
 /**
