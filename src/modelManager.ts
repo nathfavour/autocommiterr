@@ -1,4 +1,5 @@
-import { BunFile } from 'bun';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface ModelInfo {
     id: string;
@@ -63,7 +64,49 @@ export async function fetchAvailableModels(apiKey: string): Promise<ModelInfo[]>
  */
 function getConfigDir(): string {
     const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
-    return `${homeDir}/.autocommiter`;
+    return path.join(homeDir, '.autocommiter');
+}
+
+/**
+ * Ensure config directory exists
+ */
+function ensureConfigDir(): void {
+    const configDir = getConfigDir();
+    if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+    }
+}
+
+/**
+ * Read config from disk
+ */
+function readConfig(): any {
+    try {
+        const configDir = getConfigDir();
+        const configPath = path.join(configDir, 'config.json');
+        
+        if (fs.existsSync(configPath)) {
+            const data = fs.readFileSync(configPath, 'utf-8');
+            return JSON.parse(data);
+        }
+    } catch (e) {
+        console.error('Autocommiter: failed to read config', e);
+    }
+    return {};
+}
+
+/**
+ * Write config to disk
+ */
+function writeConfig(config: any): void {
+    try {
+        ensureConfigDir();
+        const configDir = getConfigDir();
+        const configPath = path.join(configDir, 'config.json');
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    } catch (e) {
+        console.error('Autocommiter: failed to write config', e);
+    }
 }
 
 /**
@@ -72,10 +115,11 @@ function getConfigDir(): string {
 export async function getCachedModels(): Promise<ModelInfo[]> {
     try {
         const configDir = getConfigDir();
-        const modelsFile = Bun.file(`${configDir}/models.json`);
+        const modelsPath = path.join(configDir, 'models.json');
         
-        if (await modelsFile.exists()) {
-            const cached = await modelsFile.json();
+        if (fs.existsSync(modelsPath)) {
+            const data = fs.readFileSync(modelsPath, 'utf-8');
+            const cached = JSON.parse(data);
             return Array.isArray(cached) ? cached : DEFAULT_MODELS;
         }
     } catch (e) {
@@ -89,8 +133,10 @@ export async function getCachedModels(): Promise<ModelInfo[]> {
  */
 export async function updateCachedModels(models: ModelInfo[]): Promise<void> {
     try {
+        ensureConfigDir();
         const configDir = getConfigDir();
-        await Bun.write(`${configDir}/models.json`, JSON.stringify(models, null, 2));
+        const modelsPath = path.join(configDir, 'models.json');
+        fs.writeFileSync(modelsPath, JSON.stringify(models, null, 2), 'utf-8');
     } catch (e) {
         console.error('Autocommiter: failed to cache models', e);
     }
@@ -100,120 +146,51 @@ export async function updateCachedModels(models: ModelInfo[]): Promise<void> {
  * Get selected model ID from config
  */
 export async function getSelectedModelId(): Promise<string> {
-    try {
-        const configDir = getConfigDir();
-        const configFile = Bun.file(`${configDir}/config.json`);
-        
-        if (await configFile.exists()) {
-            const config = await configFile.json();
-            return config.selectedModel || 'gpt-4o-mini';
-        }
-    } catch (e) {
-        console.error('Autocommiter: failed to read config', e);
-    }
-    return 'gpt-4o-mini';
+    const config = readConfig();
+    return config.selectedModel || 'gpt-4o-mini';
 }
 
 /**
  * Set selected model ID in config
  */
 export async function setSelectedModelId(modelId: string): Promise<void> {
-    try {
-        const configDir = getConfigDir();
-        let config: any = {};
-        
-        try {
-            const configFile = Bun.file(`${configDir}/config.json`);
-            if (await configFile.exists()) {
-                config = await configFile.json();
-            }
-        } catch { }
-        
-        config.selectedModel = modelId;
-        await Bun.write(`${configDir}/config.json`, JSON.stringify(config, null, 2));
-    } catch (e) {
-        console.error('Autocommiter: failed to write config', e);
-    }
+    const config = readConfig();
+    config.selectedModel = modelId;
+    writeConfig(config);
 }
 
 /**
  * Get the API key from config
  */
 export async function getApiKey(): Promise<string | null> {
-    try {
-        const configDir = getConfigDir();
-        const configFile = Bun.file(`${configDir}/config.json`);
-        
-        if (await configFile.exists()) {
-            const config = await configFile.json();
-            return config.apiKey || null;
-        }
-    } catch (e) {
-        console.error('Autocommiter: failed to read API key', e);
-    }
-    return null;
+    const config = readConfig();
+    return config.apiKey || null;
 }
 
 /**
  * Set the API key in config
  */
 export async function setApiKey(apiKey: string): Promise<void> {
-    try {
-        const configDir = getConfigDir();
-        let config: any = {};
-        
-        try {
-            const configFile = Bun.file(`${configDir}/config.json`);
-            if (await configFile.exists()) {
-                config = await configFile.json();
-            }
-        } catch { }
-        
-        config.apiKey = apiKey;
-        await Bun.write(`${configDir}/config.json`, JSON.stringify(config, null, 2));
-    } catch (e) {
-        console.error('Autocommiter: failed to write API key', e);
-    }
+    const config = readConfig();
+    config.apiKey = apiKey;
+    writeConfig(config);
 }
 
 /**
  * Get gitmoji enabled setting
  */
 export async function getGitmojiEnabled(): Promise<boolean> {
-    try {
-        const configDir = getConfigDir();
-        const configFile = Bun.file(`${configDir}/config.json`);
-        
-        if (await configFile.exists()) {
-            const config = await configFile.json();
-            return config.enableGitmoji === true;
-        }
-    } catch (e) {
-        console.error('Autocommiter: failed to read gitmoji setting', e);
-    }
-    return false;
+    const config = readConfig();
+    return config.enableGitmoji === true;
 }
 
 /**
  * Set gitmoji enabled setting
  */
 export async function setGitmojiEnabled(enabled: boolean): Promise<void> {
-    try {
-        const configDir = getConfigDir();
-        let config: any = {};
-        
-        try {
-            const configFile = Bun.file(`${configDir}/config.json`);
-            if (await configFile.exists()) {
-                config = await configFile.json();
-            }
-        } catch { }
-        
-        config.enableGitmoji = enabled;
-        await Bun.write(`${configDir}/config.json`, JSON.stringify(config, null, 2));
-    } catch (e) {
-        console.error('Autocommiter: failed to write gitmoji setting', e);
-    }
+    const config = readConfig();
+    config.enableGitmoji = enabled;
+    writeConfig(config);
 }
 
 export default {
