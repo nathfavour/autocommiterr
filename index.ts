@@ -2,11 +2,11 @@
 
 import { Command } from 'commander';
 import * as readline from 'readline';
-import changesSummarizer from './src/changesSummarizer';
-import gitmoji from './src/gitmoji';
-import modelManager from './src/modelManager';
-import apiClient from './src/apiClient';
-import gitUtils from './src/gitUtils';
+import changesSummarizer from './src/changesSummarizer.js';
+import gitmoji from './src/gitmoji.js';
+import modelManager from './src/modelManager.js';
+import apiClient from './src/apiClient.js';
+import gitUtils from './src/gitUtils.js';
 
 const program = new Command();
 
