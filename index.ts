@@ -209,10 +209,11 @@ program
 // Gitmoji settings
 program
   .command('config:gitmoji <enable>')
-  .description('Enable or disable gitmoji prefixes (true/false)')
+  .description('Enable or disable gitmoji prefixes (true/false/enable/disable)')
   .action(async (enable: string) => {
     try {
-      const enabled = enable.toLowerCase() === 'true' || enable === '1' || enable === 'yes';
+      const val = enable.toLowerCase();
+      const enabled = val === 'true' || val === '1' || val === 'yes' || val === 'enable';
       await modelManager.setGitmojiEnabled(enabled);
       console.log(`✓ Gitmoji ${enabled ? 'enabled' : 'disabled'}.`);
     } catch (err: any) {
