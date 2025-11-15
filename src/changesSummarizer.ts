@@ -3,21 +3,24 @@ import { spawnSync } from 'bun';
 type FileChange = { file: string; change: string };
 
 /**
- * Run git command using Bun's spawnSync
+ * Run git command using Bun
  */
 function runGit(cwd: string, cmd: string): string {
-  const [gitCmd, ...args] = cmd.split(' ');
-  const result = spawnSync([gitCmd, ...args], {
-    cwd,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
+  try {
+    const proc = Bun.spawnSync({
+      cmd: cmd.split(' '),
+      cwd,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
 
-  if (!result.success) {
+    if (!proc.success) {
+      return '';
+    }
+
+    return (proc.stdout?.toString() || '').trim();
+  } catch {
     return '';
   }
-
-  const output = result.stdout?.toString().trim() || '';
-  return output;
 }
 
 /**

@@ -3,20 +3,25 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Run git command using Bun's spawnSync
+ * Run git command using Bun
  */
 export function runGitCommand(cmd: string, cwd: string): string {
-  const [gitCmd, ...args] = cmd.split(' ');
-  const result = spawnSync([gitCmd, ...args], {
-    cwd,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
+  try {
+    const proc = Bun.spawnSync({
+      cmd: cmd.split(' '),
+      cwd,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
 
-  if (!result.success) {
-    throw new Error(`Git command failed: ${cmd}`);
+    if (!proc.success) {
+      const stderr = proc.stderr?.toString() || '';
+      throw new Error(stderr || `Git command failed: ${cmd}`);
+    }
+
+    return (proc.stdout?.toString() || '').trim();
+  } catch (e) {
+    throw e instanceof Error ? e : new Error(String(e));
   }
-
-  return (result.stdout?.toString() || '').trim();
 }
 
 /**

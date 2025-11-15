@@ -244,9 +244,15 @@ program
     }
   });
 
-// Default command (show help)
-program.parse(process.argv);
+// Parse and handle
+try {
+  program.parse(process.argv);
+} catch (err: any) {
+  console.error('❌ Error:', err?.message || String(err));
+  process.exit(1);
+}
 
+// Show help if no arguments
 if (!process.argv.slice(2).length) {
   program.outputHelp();
 }
