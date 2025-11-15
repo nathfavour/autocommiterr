@@ -1,14 +1,13 @@
 {
   "name": "autocommiterr",
   "version": "1.0.1",
-  "module": "index.ts",
   "type": "module",
   "bin": {
     "autocommiterr": "dist/index.js"
   },
   "scripts": {
     "dev": "bun run index.ts",
-    "build": "bun build ./index.ts --outdir ./dist --target=node --minify",
+    "build": "tsc --outDir ./dist --target ES2020 --module ES2020 --esModuleInterop --skipLibCheck --resolveJsonModule",
     "start": "bun ./index.ts"
   },
   "dependencies": {

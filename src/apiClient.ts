@@ -25,7 +25,7 @@ export async function callInferenceApi(apiKey: string, userPrompt: string, model
             throw new Error(`API request failed: ${response.statusText}`);
         }
 
-        const json = await response.json();
+        const json = await response.json() as any;
 
         // Try typical response shapes
         if (json.choices && Array.isArray(json.choices) && json.choices[0]?.message?.content) {
