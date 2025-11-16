@@ -120,6 +120,8 @@ async function performCommit(options: any = {}): Promise<void> {
       gitUtils.push(cwd);
       console.log('✓ Changes pushed to remote.');
     }
+    
+    process.exit(0);
   } catch (err: any) {
     console.error('❌ Error:', err?.message || String(err));
     process.exit(1);
@@ -134,7 +136,12 @@ program
   .option('--no-gitmoji', 'Disable gitmoji for this commit')
   .option('--push', 'Push after committing')
   .option('--quiet', 'Suppress output (useful for scripts)')
-  .action((options) => performCommit(options));
+  .action((options) => {
+    performCommit(options).catch((err) => {
+      console.error('❌ Error:', err?.message || String(err));
+      process.exit(1);
+    });
+  });
 
 // Make 'commit' the default when no arguments provided
 program.option('--push', 'Push after committing')
@@ -158,10 +165,11 @@ program
       const apiKey = await prompt('Enter your GitHub Models API key: ');
       if (!apiKey.trim()) {
         console.log('❌ API key cannot be empty.');
-        return;
+        process.exit(1);
       }
       await modelManager.setApiKey(apiKey.trim());
       console.log('✓ API key saved successfully.');
+      process.exit(0);
     } catch (err: any) {
       console.error('❌ Error:', err?.message || String(err));
       process.exit(1);
@@ -177,7 +185,7 @@ program
       const apiKey = await modelManager.getApiKey();
       if (!apiKey) {
         console.log('❌ No API key found. Run "autocommiterr config:apikey" first.');
-        return;
+        process.exit(1);
       }
 
       console.log('📥 Fetching available models...');
@@ -194,13 +202,14 @@ program
 
       if (index < 0 || index >= models.length) {
         console.log('❌ Invalid selection.');
-        return;
+        process.exit(1);
       }
 
       const selectedModel = models[index];
       await modelManager.setSelectedModelId(selectedModel.id);
       await modelManager.updateCachedModels(models);
       console.log(`✓ Model "${selectedModel.friendly_name || selectedModel.name}" selected.`);
+      process.exit(0);
     } catch (err: any) {
       console.error('❌ Error:', err?.message || String(err));
       process.exit(1);
@@ -216,7 +225,7 @@ program
       const apiKey = await modelManager.getApiKey();
       if (!apiKey) {
         console.log('❌ No API key found. Run "autocommiterr config:apikey" first.');
-        return;
+        process.exit(1);
       }
 
       console.log('📥 Fetching models from GitHub Models API...');
@@ -228,6 +237,7 @@ program
       } else {
         console.log('⚠️  No chat-completion models found.');
       }
+      process.exit(0);
     } catch (err: any) {
       console.error('❌ Error:', err?.message || String(err));
       process.exit(1);
@@ -244,6 +254,7 @@ program
       const enabled = val === 'true' || val === '1' || val === 'yes' || val === 'enable';
       await modelManager.setGitmojiEnabled(enabled);
       console.log(`✓ Gitmoji ${enabled ? 'enabled' : 'disabled'}.`);
+      process.exit(0);
     } catch (err: any) {
       console.error('❌ Error:', err?.message || String(err));
       process.exit(1);
@@ -269,6 +280,7 @@ program
       const quietMode = await modelManager.getQuietMode();
       console.log(`Quiet Mode: ${quietMode ? 'Yes' : 'No'}`);
       console.log();
+      process.exit(0);
     } catch (err: any) {
       console.error('❌ Error:', err?.message || String(err));
       process.exit(1);
@@ -285,6 +297,7 @@ program
       const enabled = val === 'true' || val === '1' || val === 'yes' || val === 'enable';
       await modelManager.setQuietMode(enabled);
       console.log(`✓ Quiet mode ${enabled ? 'enabled' : 'disabled'}.`);
+      process.exit(0);
     } catch (err: any) {
       console.error('❌ Error:', err?.message || String(err));
       process.exit(1);
@@ -292,47 +305,30 @@ program
   });
 
 // Parse and handle
-let commandWasRun = false;
+const args = process.argv.slice(2);
 
-// Wrap the original parse to detect if a command ran
-const originalParse = program.parse.bind(program);
-program.parse = function(argv: string[]) {
-  const args = argv.slice(2);
-  
-  // Check if it's a recognized command
-  const recognizedCommands = ['commit', 'config:apikey', 'config:model', 'config:refresh-models', 'config:gitmoji', 'config:quiet', 'config:show'];
-  const isCommand = args.length > 0 && recognizedCommands.includes(args[0]);
-  
-  if (isCommand) {
-    commandWasRun = true;
-    return originalParse(argv);
-  }
-  
-  // Not a recognized command - run default commit instead
-  if (!args.length || args.every(arg => arg.startsWith('-'))) {
-    const options: any = {};
-    if (args.includes('--push')) options.push = true;
-    if (args.includes('--quiet')) options.quiet = true;
-    if (args.includes('--no-gitmoji')) options.gitmoji = false;
-    
-    // Extract message if provided
-    for (let i = 0; i < args.length; i++) {
-      if ((args[i] === '-m' || args[i] === '--message') && i + 1 < args.length) {
-        options.message = args[i + 1];
-      }
-    }
-    
-    performCommit(options);
-    return program;
-  }
-  
-  // Otherwise parse normally
-  return originalParse(argv);
-};
+// Check if it's a recognized command
+const recognizedCommands = ['commit', 'config:apikey', 'config:model', 'config:refresh-models', 'config:gitmoji', 'config:quiet', 'config:show'];
+const isCommand = args.length > 0 && recognizedCommands.includes(args[0]);
 
-try {
+if (isCommand || args.length === 0 || args.every(arg => arg.startsWith('-'))) {
   program.parse(process.argv);
-} catch (err: any) {
-  console.error('❌ Error:', err?.message || String(err));
-  process.exit(1);
+} else {
+  // Not a recognized command - run default commit instead
+  const options: any = {};
+  if (args.includes('--push')) options.push = true;
+  if (args.includes('--quiet')) options.quiet = true;
+  if (args.includes('--no-gitmoji')) options.gitmoji = false;
+  
+  // Extract message if provided
+  for (let i = 0; i < args.length; i++) {
+    if ((args[i] === '-m' || args[i] === '--message') && i + 1 < args.length) {
+      options.message = args[i + 1];
+    }
+  }
+  
+  performCommit(options).catch((err) => {
+    console.error('❌ Error:', err?.message || String(err));
+    process.exit(1);
+  });
 }
